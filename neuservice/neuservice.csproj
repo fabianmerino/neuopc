@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Platforms>AnyCPU;x86</Platforms>
+    <StartupObject>neuservice.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,16 +14,16 @@
       <VersionMajor>1</VersionMajor>
       <Guid>28e68f91-8d75-11d1-8dc3-3c302a000000</Guid>
       <Lcid>0</Lcid>
-      <Isolated>false</Isolated>
+      <Isolated>False</Isolated>
       <EmbedInteropTypes>true</EmbedInteropTypes>
-      <Private></Private>
+      <Private>True</Private>
     </COMReference>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetMQ" Version="4.0.1.12" />
-    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="1.4.371.86" />
-    <PackageReference Include="Serilog" Version="2.12.0" />
+    <PackageReference Include="NetMQ" Version="4.0.1.13" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="1.4.371.96" />
+    <PackageReference Include="Serilog" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
   </ItemGroup>

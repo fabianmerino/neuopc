@@ -42,10 +42,10 @@ namespace neuopc
         private string uaPassword;
 
         private RequestSocket requestSocket;
-        private ProcessInfo processInfo = null;
+        private readonly ProcessInfo processInfo = null;
         private bool running = true;
-        private object runningLocker;
-        private object socketLocker;
+        private readonly object runningLocker;
+        private readonly object socketLocker;
         private Thread thread;
 
         public SubProcess()
@@ -128,7 +128,7 @@ namespace neuopc
                     RedirectStandardInput = false,
                     RedirectStandardOutput = false,
                     RedirectStandardError = false,
-                    //CreateNoWindow = true,
+                    CreateNoWindow = true,
                     ErrorDialog = false,
                     Arguments = $"da_host={serviceInfo.DAHost} da_server={serviceInfo.DAServer} ua_url={serviceInfo.UAPort} ua_user={serviceInfo.UAUsername} ua_password={serviceInfo.UAPassword} zmq_uri={serviceInfo.ListenUri}",
                 }
@@ -216,7 +216,7 @@ namespace neuopc
                 {
                     Type = neulib.MsgType.Ping
                 };
-                var buff = Serializer.Serialize<PingMsg>(ping);
+                byte[] buff = Serializer.Serialize<PingMsg>(ping);
                 Request(in buff, out byte[] result);
             }
 

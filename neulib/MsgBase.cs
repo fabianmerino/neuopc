@@ -20,6 +20,8 @@ namespace neulib
         DADataRes,
         DADisconnectReq,
         DADisconnectRes,
+        DABrowseReq,
+        DABrowseRes,
         UAStartReq,
         UAStartRes,
         UAStatusReq,
@@ -30,7 +32,8 @@ namespace neulib
         ExitRes,
     }
 
-    public enum MsgError {
+    public enum MsgError
+    {
         MsgInvalid,
         MsgSequenceError,
     }

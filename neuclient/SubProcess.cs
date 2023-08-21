@@ -99,7 +99,7 @@ namespace neuclient
             return new NeuServiceInfo
             {
                 Name = "neuservice",
-                Path = @"C:\Users\0x1c\workbench\neuopc\neuservice\bin\x86\Debug\netcoreapp3.1\neuservice.exe",
+                Path = @"F:\Development\Personal\NET Core Projects\neuopc\neuservice\bin\x86\Debug\netcoreapp3.1\neuservice.exe",
                 ListenUri = zmqListenUri,
                 ConnectUri = zmqConnectUri,
                 DAHost = "kubernetes.docker.internal",
@@ -117,7 +117,7 @@ namespace neuclient
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = @"C:\Users\0x1c\workbench\neuopc\neuservice\bin\x86\Debug\netcoreapp3.1\neuservice.exe",
+                    FileName = @"F:\Development\Personal\NET Core Projects\neuopc\neuservice\bin\x86\Debug\netcoreapp3.1\neuservice.exe",
                     UseShellExecute = false,
                     RedirectStandardInput = false,
                     RedirectStandardOutput = false,

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using Serilog;
 
@@ -11,6 +10,7 @@ namespace neuopc
     {
         public string DAHost { get; set; }
         public string DAServer { get; set; }
+        public string[] Nodes { get; set; }
         public string UAUrl { get; set; }
         public string UAUser { get; set; }
         public string UAPassword { get; set; }

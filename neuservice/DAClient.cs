@@ -145,6 +145,24 @@ namespace neuservice
             return list;
         }
 
+        public static List<string> GetItems(OPCServer opcServer)
+        {
+            var list = new List<string>();
+            try
+            {
+                var browser = opcServer.CreateBrowser();
+                browser.ShowBranches();
+                browser.ShowLeafs(true);
+                list.AddRange(browser.Cast<string>().ToArray());
+            }
+            catch (Exception exception)
+            {
+                Log.Warning($"get opc items failed, error:{exception.Message}");
+            }
+
+            return list;
+        }
+
         public void AddSlowChannel(Channel<DaMsg> channel)
         {
             if (null == channel) { return; }
@@ -246,12 +264,12 @@ namespace neuservice
 
         private void UpdateNodes()
         {
-            OPCBrowser brower;
+            OPCBrowser browser;
             try
             {
-                brower = server.CreateBrowser();
-                brower.ShowBranches();
-                brower.ShowLeafs(true);
+                browser = server.CreateBrowser();
+                browser.ShowBranches();
+                browser.ShowLeafs(true);
             }
             catch (Exception error)
             {
@@ -261,7 +279,7 @@ namespace neuservice
 
             lock (nodesLocker)
             {
-                foreach (var item in brower)
+                foreach (var item in browser)
                 {
                     var name = item.ToString();
                     if (nodes.Where(node => node.Name.Equals(name)).Count() > 0)
