@@ -226,11 +226,14 @@ namespace neuopc
                 var path = node.FullPath;
                 Array branches = path.Substring(path.IndexOf("/") + 1, path.Length - path.IndexOf("/") - 1).Split('/');
                 opcBrowser.MoveTo(branches);
-                opcBrowser.ShowLeafs(true);
+                opcBrowser.ShowLeafs(false);
                 TagTreeNode subNode = null;
+                string Id = "";
                 foreach (var branch in opcBrowser)
                 {
+                    Id = opcBrowser.GetItemID(branch.ToString());
                     subNode = node.AddNode(branch.ToString());
+                    subNode.NodeId = Id;
                     subNode.IsLeaf = true;
                 }
                 opcBrowser.MoveToRoot();
@@ -244,29 +247,55 @@ namespace neuopc
 
         public List<string> GetRootNodes()
         {
-            opcBrowser.MoveToRoot();
-            List<string> list = new List<string>();
-            opcBrowser.ShowBranches();
-            foreach (var branch in opcBrowser)
-            {
-                list.Add(branch.ToString());
-            }
+            try { 
+                opcBrowser.MoveToRoot();
+                List<string> list = new List<string>();
+                opcBrowser.ShowBranches();
+                foreach (var branch in opcBrowser)
+                {
+                    list.Add(branch.ToString());
+                }
 
-            return list;
-        }
+                return list;
+            }
+            catch (System.Exception)
+            {
+                return null;
+            }
+}
 
         public List<string> GetChildNodes(string path)
         {
-            List<string> list = new List<string>();
-            Array branches = path.Substring(path.IndexOf("/") + 1, path.Length - path.IndexOf("/") - 1).Split('/');
-            opcBrowser.MoveTo(branches);
-            opcBrowser.ShowBranches();
-            foreach (var branch in opcBrowser)
+            try
             {
-                list.Add(branch.ToString());
+                List<string> list = new List<string>();
+                Array branches = path.Substring(path.IndexOf("/") + 1, path.Length - path.IndexOf("/") - 1).Split('/');
+                opcBrowser.MoveTo(branches);
+                opcBrowser.ShowBranches();
+                foreach (var branch in opcBrowser)
+                {
+                    list.Add(branch.ToString());
+                }
+                opcBrowser.MoveToRoot();
+                return list;
             }
-            opcBrowser.MoveToRoot();
-            return list;
+            catch (System.Exception)
+            {
+                return null;
+            }
+        }
+
+        public string GetItemID(string leaf)
+        {
+            try
+            {
+                var itemID = opcBrowser.GetItemID(leaf);
+                return itemID;
+            }
+            catch (System.Exception)
+            {
+                return null;
+            }
         }
 
         public bool IsOPCServerConnected()

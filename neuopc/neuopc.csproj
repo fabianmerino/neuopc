@@ -4,12 +4,35 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
-	<ApplicationIcon></ApplicationIcon>
+    <ApplicationIcon></ApplicationIcon>
     <Platforms>AnyCPU;x86</Platforms>
     <RootNamespace>neuopc</RootNamespace>
-	  <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-	  <Win32Resource />
-	  <StartupObject>neuopc.Program</StartupObject>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <Win32Resource />
+    <StartupObject></StartupObject>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <DebugType>embedded</DebugType>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>embedded</DebugType>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Optimize>False</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>embedded</DebugType>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Optimize>False</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,12 +64,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\neulib\neulib.csproj" />
-    <ProjectReference Include="..\neuservice\neuservice.csproj">
-      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
-      <Private>True</Private>
-      <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
-      <EmbedInteropTypes></EmbedInteropTypes>
-    </ProjectReference>
+    <ProjectReference Include="..\neuservice\neuservice.csproj" />
   </ItemGroup>
 
   <ItemGroup>

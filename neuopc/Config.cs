@@ -6,11 +6,18 @@ using Serilog;
 
 namespace neuopc
 {
+
+    public class NodeInfo
+    {
+        public string Name { get; set; }
+        public string ID { get; set; }
+        public string Path { get; set; }
+    }
     public class Config
     {
         public string DAHost { get; set; }
         public string DAServer { get; set; }
-        public string[] Nodes { get; set; }
+        public NodeInfo[] Nodes { get; set; }
         public string UAUrl { get; set; }
         public string UAUser { get; set; }
         public string UAPassword { get; set; }

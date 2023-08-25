@@ -16,34 +16,25 @@ namespace neuopc.Model
             set { _name = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(Name))); }
         }
 
-        private string _type;
-        public string Type
-        {
-            get { return _type; }
-            set { _type = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(Type))); }
-        }
-
-
         private string _path;
         public string Path
         {
             get { return _path; }
-            set { _type = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(Type))); }
+            set { _path = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(Type))); }
         }
 
+        private string _itemId;
         public string ItemId
         {
-            get
-            {
-                return _path.Substring(_path.IndexOf("/") + 1, _path.Length - _path.IndexOf("/") - 1).Replace("/", ".");
-            }
+            get { return _itemId; }
+            set { _itemId = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(ItemId))); }
 
         }
 
-        public ViewModel(string name, string type, string path)
+        public ViewModel(string name, string nodeId, string path)
         {
             _name = name;
-            _type = type;
+            _itemId = nodeId;
             _path = path;
         }
     }

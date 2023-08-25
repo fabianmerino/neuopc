@@ -30,10 +30,6 @@ namespace neuopc
             subProcess = new SubProcess();
             running = true;
 
-            treeViewDaBrowse.AfterCollapse += TreeViewDABrowse_AfterCollapse;
-            treeViewDaBrowse.AfterExpand += TreeViewDABrowse_AfterExpand;
-            treeViewDaBrowse.DoubleClick += TreeViewDABrowse_DoubleClick;
-
             dataGridView1.AutoGenerateColumns = false;
             dataGridView1.DataSource = dataItems;
 
@@ -75,13 +71,13 @@ namespace neuopc
         {
             if (e.Node.Nodes.Count == 0) return;
 
-            var tag = e.Node.Tag?.ToString();
-            if (string.IsNullOrEmpty(tag))
+            var tag = (NodeInfo) e.Node.Tag;
+            if (string.IsNullOrEmpty(tag.Path))
             {
                 return;
             }
 
-            var subNode = treeNode.FindNodeByPath(tag);
+            var subNode = treeNode.FindNodeByPath(tag.Path);
             if (null == subNode || subNode.IsLeaf)
             {
                 e.Node.Nodes.Clear();
@@ -97,12 +93,22 @@ namespace neuopc
             e.Node.Nodes.Clear();
 
             // Get the children
+            var children = opcClient.GetChildNodes(tag.Path);
+            if (null != children || children.Count > 0)
+            {
+                foreach (var child in children)
+                {
+                    subNode.AddNode(child);
+                }
+            }
+
             subNode = opcClient.GetLeaf(subNode);
-            if (null == subNode || 0 == subNode.Nodes.Count)
+            if (null == subNode || 0 == subNode.Nodes?.Count)
             {
                 subNode.IsLeaf = true;
                 return;
             }
+
             Dictionary<string, TreeNode> tree = new Dictionary<string, TreeNode>();
             NodeTree(subNode, tree);
             var childs = tree.Where(x => subNode.Nodes.Any(a => a.FullPath == x.Key)).Select(x => x.Value).ToArray();
@@ -119,58 +125,16 @@ namespace neuopc
         {
             if (treeViewDaBrowse.SelectedNode == null || treeViewDaBrowse.SelectedNode.Nodes.Count > 0) return;
             var selectedNode = treeViewDaBrowse.SelectedNode;
+            var tag = (NodeInfo) selectedNode.Tag;
+            if (treeNode.FindNodeByPath(tag?.Path).IsLeaf)
+            {
+                AddNode(selectedNode);
+                return;
+            }
             selectedNode.Nodes.Add(new TreeNode("Loading..."));
             selectedNode.Expand();
             // Monitor(treeViewDaBrowse.SelectedNode);
         }
-
-        private void Monitor(TreeNode node)
-        {
-            // if (node.Nodes.Count > 0)
-            // {
-            //     foreach (TreeNode item in node.Nodes) Monitor(item);
-            // }
-            // else
-            // {
-            var tag = node.Tag?.ToString();
-            if (string.IsNullOrEmpty(tag))
-            {
-                return;
-            }
-
-            // Remove all children
-            node.Nodes.Clear();
-            // e.Node.ImageIndex = 0;
-            // e.Node.SelectedImageIndex = 1;
-
-            var subNode = treeNode.FindNodeByPath(tag);
-            if (null == subNode || subNode.IsLeaf)
-            {
-                return;
-            }
-
-            // Get the children
-            subNode = opcClient.GetLeaf(subNode);
-            if (null == subNode || 0 == subNode.Nodes.Count)
-            {
-                subNode.IsLeaf = true;
-                return;
-            }
-            Dictionary<string, TreeNode> tree = new Dictionary<string, TreeNode>();
-            NodeTree(subNode, tree);
-            var childs = tree.Where(x => subNode.Nodes.Any(a => a.FullPath == x.Key)).Select(x => x.Value).ToArray();
-
-            // Add the children
-            node.Nodes.AddRange(childs);
-            node.Expand();
-
-            // Add to listview
-            // ListViewItem lvi = new ListViewItem();
-            // lvi.Text = node.Text;
-            // lvi.SubItems.Add(node.Tag.ToString());
-            // }
-        }
-
 
         private void ResetListView(List<DataItem> list)
         {
@@ -291,12 +255,11 @@ namespace neuopc
                 SwitchButton.Text = "Start";
             }
 
-            if (config.Nodes.Length > 0)
+            if (config.Nodes?.Length > 0)
             {
                 foreach (var item in config.Nodes)
                 {
-                    var name = item.Split("/").Last();
-                    var dataItem = new ViewModel(name, null, item);
+                    var dataItem = new ViewModel(item.Name, item.ID, item.Path);
                     dataItems.Add(dataItem);
                 }
             }
@@ -462,7 +425,13 @@ namespace neuopc
 
                 OnConnectChanged(true);
                 treeViewDaBrowse.Nodes.Clear();
-                treeNode = opcClient.GetTree();
+                var rootNodes = opcClient.GetRootNodes();
+                treeNode = new TagTreeNode(server);
+
+                foreach (var item in rootNodes)
+                {
+                    treeNode.AddNode(item);
+                }
 
                 if (null == treeNode)
                 {
@@ -491,14 +460,16 @@ namespace neuopc
             foreach (var item in root.Nodes)
             {
                 TreeNode node;
+                var tag = new NodeInfo() { ID = item.NodeId, Path = item.FullPath, Name = item.Name };
 
                 if (item.IsLeaf)
                 {
-                    node = new TreeNode(item.Name) { Name = item.Name, Tag = item.FullPath, ImageIndex = 0, SelectedImageIndex = 1, Checked = false };
+                    node = new TreeNode(item.Name) { Name = item.Name, Tag = tag, ImageIndex = 0, SelectedImageIndex = 1, Checked = false };
                 }
                 else
                 {
-                    node = new TreeNode(item.Name) { Name = item.Name, Tag = item.FullPath, ImageIndex = 2, SelectedImageIndex = 3 };
+                    node = new TreeNode(item.Name) { Name = item.Name, Tag = tag, ImageIndex = 2, SelectedImageIndex = 3 };
+                    node.Nodes.Add(new TreeNode("Loading..."));
                 }
 
                 tree.Add(item.FullPath, node);
@@ -618,10 +589,10 @@ namespace neuopc
                 AutoConnect = CheckBox.Checked
             };
 
-            var _nodes = new List<string>();
+            var _nodes = new List<NodeInfo>();
             foreach (var item in dataItems)
             {
-                _nodes.Add(item.ItemId);
+                _nodes.Add(new NodeInfo() { Name= item.Name, ID = item.ItemId, Path = item.Path });
             }
 
             config.Nodes = _nodes.ToArray();
@@ -707,21 +678,24 @@ namespace neuopc
                 MessageBox.Show("Please select a node first.");
                 return;
             }
-            var name = treeViewDaBrowse.SelectedNode.Text;
-            var itemId = treeViewDaBrowse.SelectedNode.Tag?.ToString();
-            if (string.IsNullOrEmpty(itemId))
+            AddNode(treeViewDaBrowse.SelectedNode);            
+        }
+
+        private void AddNode(TreeNode node)
+        {
+            var _node = node.Tag as NodeInfo;
+            if (null == _node || string.IsNullOrEmpty(_node.Path))
             {
                 MessageBox.Show("Please select a node first.");
                 return;
             }
 
-            if (dataItems.Any(x => x.Name == name))
+            if (dataItems.Any(x => x.ItemId == _node.ID))
             {
                 MessageBox.Show("Item already exists.");
                 return;
             }
-            dataItems.Add(new ViewModel(name, "", itemId));
-
+            dataItems.Add(new ViewModel(_node.Name, _node.ID , _node.Path));
         }
 
         private void BtnRemoveItem_Click(object sender, EventArgs e)

@@ -46,6 +46,9 @@ namespace neuopc
             }
         }
 
+
+        public string NodeId { get; set; }        
+
         public TagTreeNode()
         { }
 
