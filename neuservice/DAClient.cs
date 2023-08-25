@@ -22,7 +22,7 @@ namespace neuservice
     {
         Int8 = 16, // UA_TYPES_SBYTE/VT_I1
         Int16 = 2, // UA_TYPES_INT16/VT_I2
-        Int32B = 22, // UA_TYPES_INT32/VT_INT 
+        Int32B = 22, // UA_TYPES_INT32/VT_INT
         Int32 = 3, // UA_TYPES_INT32/VT_I4
         Int64 = 20, // UA_TYPES_INT64/VT_I8
         Float = 4, // UA_TYPES_FLOAT/VT_R4
@@ -100,6 +100,7 @@ namespace neuservice
         private readonly List<Node> nodes;
         private string hostName;
         private string serverName;
+        private List<string> items;
 
         private Thread thread;
         private readonly object locker;
@@ -115,8 +116,15 @@ namespace neuservice
             nodesLocker = new object();
             running = false;
             nodes = new List<Node>();
+            items = new List<string>();
             slowChannels = new List<Channel<DaMsg>>();
             fastChannels = new List<Channel<DaMsg>>();
+        }
+
+        public List<string> Items
+        {
+            get { return items; }
+            set { items = value; }
         }
 
 
@@ -216,98 +224,174 @@ namespace neuservice
             return true;
         }
 
-        private bool SetNodes()
+        public bool SetNodes()
         {
-            OPCBrowser brower;
-            try
+            if (null == items || items.Count == 0)
             {
-                brower = server.CreateBrowser();
-                brower.ShowBranches();
-                brower.ShowLeafs(true);
-            }
-            catch (Exception error)
-            {
-                Log.Error($"create browser failed, msg:{error.Message}");
-                return false;
-            }
-
-            lock (nodesLocker)
-            {
-                nodes.Clear();
-                int index = 0;
-
-                foreach (var item in brower)
+                Log.Warning($"SetNodes: list of nodes is empty");
+                OPCBrowser browser;
+                try
                 {
-                    var node = new Node()
-                    {
-                        Name = item.ToString(),
-                    };
+                    browser = server.CreateBrowser();
+                    browser.ShowBranches();
+                    browser.ShowLeafs(true);
+                }
+                catch (Exception error)
+                {
+                    Log.Error($"create browser failed, msg:{error.Message}");
+                    return false;
+                }
 
-                    try
-                    {
-                        node.Item = group.OPCItems.AddItem(node.Name, index);
-                        node.Type = (DaType)node.Item.CanonicalDataType;
-                        nodes.Add(node);
-                        Log.Information($"add item success, name:{node.Name}, index:{index}");
+                lock (nodesLocker)
+                {
+                    nodes.Clear();
+                    int index = 0;
 
-                        index++;
+                    foreach (var item in browser)
+                    {
+                        var node = new Node()
+                        {
+                            Name = item.ToString(),
+                        };
+
+                        try
+                        {
+                            node.Item = group.OPCItems.AddItem(node.Name, index);
+                            node.Type = (DaType)node.Item.CanonicalDataType;
+                            nodes.Add(node);
+                            Log.Information($"add item success, name:{node.Name}, index:{index}");
+
+                            index++;
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Warning($"add item failed, name:{item}, error:{exception.Message}");
+                        }
                     }
-                    catch (Exception exception)
+                }
+            }
+            else
+            {
+                lock (nodesLocker)
+                {
+                    nodes.Clear();
+                    int index = 0;
+
+                    foreach (var item in items)
                     {
-                        Log.Warning($"add item failed, name:{item}, error:{exception.Message}");
+                        var node = new Node()
+                        {
+                            Name = item,
+                        };
+
+                        try
+                        {
+                            node.Item = group.OPCItems.AddItem(node.Name, index);
+                            node.Type = (DaType)node.Item.CanonicalDataType;
+                            nodes.Add(node);
+                            Log.Information($"add item success, name:{node.Name}, index:{index}");
+
+                            index++;
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Warning($"add item failed, name:{item}, error:{exception.Message}");
+                        }
+                    }
+                }
+            }
+
+
+
+            return true;
+        }
+
+
+        public bool UpdateNodes()
+        {
+            if (null == items || items.Count == 0)
+            {
+                Log.Warning($"UodateNodes: list of nodes is empty");
+                OPCBrowser browser;
+                try
+                {
+                    browser = server.CreateBrowser();
+                    browser.ShowBranches();
+                    browser.ShowLeafs(true);
+                }
+                catch (Exception error)
+                {
+                    Log.Error($"create browser failed, msg:{error.Message}");
+                    return false;
+                }
+                lock (nodesLocker)
+                {
+                    foreach (var item in browser)
+                    {
+                        var name = item.ToString();
+                        if (nodes.Where(node => node.Name.Equals(name)).Count() > 0)
+                        {
+                            continue;
+                        }
+
+                        var node = new Node()
+                        {
+                            Name = name.ToString(),
+                        };
+
+                        try
+                        {
+                            var last = nodes.LastOrDefault();
+                            var lastHandle = last.Item.ClientHandle;
+                            var index = null == last ? 0 : (lastHandle + 1);
+                            node.Item = group.OPCItems.AddItem(node.Name, index);
+                            node.Type = (DaType)node.Item.CanonicalDataType;
+                            nodes.Add(node);
+                            Log.Information($"update item success, name:{item}, index:{index}");
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Warning($"update item failed, name:{item}, error:{exception.Message}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                lock (nodesLocker)
+                {
+                    foreach (var item in items)
+                    {
+                        var name = item.ToString();
+                        if (nodes.Where(node => node.Name.Equals(name)).Count() > 0)
+                        {
+                            continue;
+                        }
+
+                        var node = new Node()
+                        {
+                            Name = name.ToString(),
+                        };
+
+                        try
+                        {
+                            var last = nodes.LastOrDefault();
+                            var lastHandle = last.Item.ClientHandle;
+                            var index = null == last ? 0 : (lastHandle + 1);
+                            node.Item = group.OPCItems.AddItem(node.Name, index);
+                            node.Type = (DaType)node.Item.CanonicalDataType;
+                            nodes.Add(node);
+                            Log.Information($"update item success, name:{item}, index:{index}");
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Warning($"update item failed, name:{item}, error:{exception.Message}");
+                        }
                     }
                 }
             }
 
             return true;
-        }
-
-        private void UpdateNodes()
-        {
-            OPCBrowser browser;
-            try
-            {
-                browser = server.CreateBrowser();
-                browser.ShowBranches();
-                browser.ShowLeafs(true);
-            }
-            catch (Exception error)
-            {
-                Log.Error($"create browser failed, msg:{error.Message}");
-                return;
-            }
-
-            lock (nodesLocker)
-            {
-                foreach (var item in browser)
-                {
-                    var name = item.ToString();
-                    if (nodes.Where(node => node.Name.Equals(name)).Count() > 0)
-                    {
-                        continue;
-                    }
-
-                    var node = new Node()
-                    {
-                        Name = name,
-                    };
-
-                    try
-                    {
-                        var last = nodes.LastOrDefault();
-                        var lastHandle = last.Item.ClientHandle;
-                        var index = null == last ? 0 : (lastHandle + 1);
-                        node.Item = group.OPCItems.AddItem(node.Name, index);
-                        node.Type = (DaType)node.Item.CanonicalDataType;
-                        nodes.Add(node);
-                        Log.Information($"update item success, name:{item}, index:{index}");
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Warning($"update item failed, name:{item}, error:{exception.Message}");
-                    }
-                }
-            }
         }
 
         private bool SetItems()
@@ -623,10 +707,11 @@ namespace neuservice
             Disconnect();
         }
 
-        public void Open(string host, string name)
+        public void Open(string host, string name, List<string> listOfNodes = null)
         {
             hostName = host;
             serverName = name;
+            items = listOfNodes;
 
             lock (locker)
             {

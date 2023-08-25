@@ -291,6 +291,16 @@ namespace neuopc
                 SwitchButton.Text = "Start";
             }
 
+            if (config.Nodes.Length > 0)
+            {
+                foreach (var item in config.Nodes)
+                {
+                    var name = item.Split("/").Last();
+                    var dataItem = new ViewModel(name, null, item);
+                    dataItems.Add(dataItem);
+                }
+            }
+
             subProcess.Daemon();
             var ts = new ThreadStart(TestGetDatas);
             var thread = new Thread(ts);
@@ -508,11 +518,18 @@ namespace neuopc
             if (SwitchButton.Text.Equals("Start"))
             {
                 // DA start
+                var nodes = new List<string>();
+                foreach (var item in dataItems)
+                {
+                    nodes.Add(item.ItemId);
+                }
+
                 var req1 = new ConnectReqMsg
                 {
                     Type = neulib.MsgType.DAConnectReq,
                     Host = DAHostComboBox.Text,
-                    Server = DAServerComboBox.Text
+                    Server = DAServerComboBox.Text,
+                    Nodes = nodes
                 };
                 var buff1 = Serializer.Serialize<ConnectReqMsg>(req1);
                 subProcess.Request(in buff1, out byte[] result1);
@@ -723,6 +740,11 @@ namespace neuopc
         private void BtnRemoveAll_Click(object sender, EventArgs e)
         {
             dataItems.Clear();
+        }
+
+        private void TreeViewDaBrowse_BeforeExpand(object sender, TreeViewCancelEventArgs e)
+        {
+
         }
     }
 }

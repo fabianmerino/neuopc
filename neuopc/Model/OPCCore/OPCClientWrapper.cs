@@ -202,13 +202,12 @@ namespace neuopc
         /// <returns></returns>
         public TagTreeNode GetTree(TagTreeNode node = null)
         {
-            TagTreeNode subNode = null;
             opcBrowser.ShowBranches();
 
             foreach (var branch in opcBrowser)
             {
                 node ??= new TagTreeNode(opcServer.ServerName);
-                subNode = node.AddNode(branch.ToString());
+                TagTreeNode subNode = node.AddNode(branch.ToString());
                 try
                 {
                     opcBrowser.MoveDown(branch.ToString());
@@ -227,7 +226,7 @@ namespace neuopc
                 var path = node.FullPath;
                 Array branches = path.Substring(path.IndexOf("/") + 1, path.Length - path.IndexOf("/") - 1).Split('/');
                 opcBrowser.MoveTo(branches);
-                opcBrowser.ShowLeafs(false);
+                opcBrowser.ShowLeafs(true);
                 TagTreeNode subNode = null;
                 foreach (var branch in opcBrowser)
                 {

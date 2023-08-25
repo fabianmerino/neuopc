@@ -189,6 +189,22 @@ namespace neuservice
 
                             break;
                         }
+                    case neulib.MsgType.DASetNodesReq:
+                        {
+                            var requestMsg = Serializer.Deserialize<DANodesReqMsg>(msg);
+                            var responseMsg = SetDANodes(requestMsg);
+                            var buff = Serializer.Serialize<DANodesResMsg>(responseMsg);
+                            responseSocket.SendFrame(buff, false);
+                            break;
+                        }
+                    case neulib.MsgType.DAUpdateNodesReq:
+                        {
+                            var requestMsg = Serializer.Deserialize<DANodesReqMsg>(msg);
+                            var responseMsg = UpdateDANodes(requestMsg);
+                            var buff = Serializer.Serialize<DANodesResMsg>(responseMsg);
+                            responseSocket.SendFrame(buff, false);
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -225,7 +241,7 @@ namespace neuservice
         {
             var responseMsg = new ConnectResMsg();
             responseMsg.Type = neulib.MsgType.DAConnectRes;
-            client.Open(requestMsg.Host, requestMsg.Server);
+            client.Open(requestMsg.Host, requestMsg.Server, requestMsg.Nodes);
             return responseMsg;
         }
 
@@ -264,6 +280,37 @@ namespace neuservice
         }
 
         private void GetDAServerStatus() { }
+
+        private DANodesResMsg SetDANodes(DANodesReqMsg requestMsg)
+        {
+            var responseMsg = new DANodesResMsg
+            {
+                Type = neulib.MsgType.DASetNodesRes,
+            };
+            client.Items = requestMsg.Nodes;
+            responseMsg.Result = client.SetNodes();
+            return responseMsg;
+        }
+
+        private DANodesResMsg UpdateDANodes(DANodesReqMsg requestMsg)
+        {
+
+            var responseMsg = new DANodesResMsg
+            {
+                Type = neulib.MsgType.DAUpdateNodesRes,
+            };
+            var currentItems = client.Items;
+            foreach (var item in requestMsg.Nodes)
+            {
+                if (currentItems.Contains(item))
+                {
+                    continue;
+                }
+                currentItems.Add(item);
+            }
+            responseMsg.Result = client.UpdateNodes();
+            return responseMsg;
+        }
 
         private DisconnectResMsg DisconnectDAServer(DisconnectReqMsg requestMsg)
         {

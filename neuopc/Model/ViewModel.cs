@@ -5,7 +5,7 @@ using System.Text;
 
 namespace neuopc.Model
 {
-    internal class ViewModel: INotifyPropertyChanged
+    internal class ViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -23,18 +23,28 @@ namespace neuopc.Model
             set { _type = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(Type))); }
         }
 
-        private string _itemId;
-        public string ItemId
+
+        private string _path;
+        public string Path
         {
-            get { return _itemId; }
-            set { _itemId = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(ItemId))); }
+            get { return _path; }
+            set { _type = value; PropertyChanged(this, new PropertyChangedEventArgs(nameof(Type))); }
         }
 
-        public ViewModel(string name, string type, string itemId)
+        public string ItemId
+        {
+            get
+            {
+                return _path.Substring(_path.IndexOf("/") + 1, _path.Length - _path.IndexOf("/") - 1).Replace("/", ".");
+            }
+
+        }
+
+        public ViewModel(string name, string type, string path)
         {
             _name = name;
             _type = type;
-            _itemId = itemId;
+            _path = path;
         }
     }
 }

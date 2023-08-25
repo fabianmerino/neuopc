@@ -9,6 +9,7 @@ namespace neulib
     {
         public string Host;
         public string Server;
+        public List<string> Nodes;
     }
 
     [Serializable]

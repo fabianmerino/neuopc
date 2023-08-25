@@ -19,7 +19,6 @@ namespace neulib
     [Serializable]
     public class DAStatusReqMsg: MsgBase { }
 
-
     [Serializable]
     public class DAStatusResMsg: MsgBase { }
 }
