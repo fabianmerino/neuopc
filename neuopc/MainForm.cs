@@ -72,12 +72,12 @@ namespace neuopc
             if (e.Node.Nodes.Count == 0) return;
 
             var tag = (NodeInfo) e.Node.Tag;
-            if (string.IsNullOrEmpty(tag.Path))
+            if (string.IsNullOrEmpty(tag?.Path))
             {
                 return;
             }
 
-            var subNode = treeNode.FindNodeByPath(tag.Path);
+            var subNode = treeNode.FindNodeByPath(tag?.Path);
             if (null == subNode || subNode.IsLeaf)
             {
                 e.Node.Nodes.Clear();
@@ -93,8 +93,8 @@ namespace neuopc
             e.Node.Nodes.Clear();
 
             // Get the children
-            var children = opcClient.GetChildNodes(tag.Path);
-            if (null != children || children.Count > 0)
+            var children = opcClient.GetChildNodes(tag?.Path);
+            if (null != children && children?.Count > 0)
             {
                 foreach (var child in children)
                 {
@@ -105,7 +105,6 @@ namespace neuopc
             subNode = opcClient.GetLeaf(subNode);
             if (null == subNode || 0 == subNode.Nodes?.Count)
             {
-                subNode.IsLeaf = true;
                 return;
             }
 
@@ -684,7 +683,7 @@ namespace neuopc
         private void AddNode(TreeNode node)
         {
             var _node = node.Tag as NodeInfo;
-            if (null == _node || string.IsNullOrEmpty(_node.Path))
+            if (null == _node || string.IsNullOrEmpty(_node?.Path))
             {
                 MessageBox.Show("Please select a node first.");
                 return;
