@@ -12,6 +12,8 @@ namespace neulib
         DASetNodesRes,
         DAUpdateNodesReq,
         DAUpdateNodesRes,
+        DARemoveNodesReq,
+        DARemoveNodesRes,
         DAServersReq,
         DAServersRes,
         DAConnectReq,

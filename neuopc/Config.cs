@@ -36,6 +36,14 @@ namespace neuopc
             catch (Exception ex)
             {
                 Log.Warning($"read config file fail:{ex.Message}");
+                // create default config
+                var defaultConfig = new Config
+                {
+                    DAHost = "localhost",
+                    AutoConnect = false
+                };
+                SaveConfig(filename, defaultConfig);
+                return defaultConfig;
             }
 
             var config = new Config();

@@ -36,6 +36,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Service\**" />
+    <EmbeddedResource Remove="Service\**" />
+    <None Remove="Service\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="DAClient.cs" />
     <Compile Remove="Host.cs" />
     <Compile Remove="Register.cs" />
@@ -57,6 +63,7 @@
 
   <ItemGroup>
     <PackageReference Include="NetMQ" Version="4.0.1.13" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.5.0" />
     <PackageReference Include="Serilog" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />

@@ -205,6 +205,14 @@ namespace neuservice
                             responseSocket.SendFrame(buff, false);
                             break;
                         }
+                    case neulib.MsgType.DARemoveNodesReq:
+                        {
+                            var requestMsg = Serializer.Deserialize<DANodesReqMsg>(msg);
+                            var responseMsg = UpdateDANodes(requestMsg);
+                            var buff = Serializer.Serialize<DANodesResMsg>(responseMsg);
+                            responseSocket.SendFrame(buff, false);
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -307,6 +315,25 @@ namespace neuservice
                     continue;
                 }
                 currentItems.Add(item);
+            }
+            responseMsg.Result = client.UpdateNodes();
+            return responseMsg;
+        }
+
+        private DANodesResMsg RemoveDANodes(DANodesReqMsg requestMsg)
+        {
+            var responseMsg = new DANodesResMsg
+            {
+                Type = neulib.MsgType.DARemoveNodesRes,
+            };
+            var currentItems = client.Items;
+            foreach (var item in requestMsg.Nodes)
+            {
+                if (!currentItems.Contains(item))
+                {
+                    continue;
+                }
+                currentItems.Remove(item);
             }
             responseMsg.Result = client.UpdateNodes();
             return responseMsg;

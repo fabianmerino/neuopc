@@ -11,17 +11,23 @@ using Serilog;
 using neulib;
 using neuopc.Model;
 using System.ComponentModel;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text.Json;
 
 namespace neuopc
 {
     public partial class MainForm : Form
     {
-        private readonly Task task;
         private readonly SubProcess subProcess;
         private bool running;
         private readonly OPCClientWrapper opcClient;
         private readonly BindingList<ViewModel> dataItems = new BindingList<ViewModel>();
         private TagTreeNode treeNode;
+        private ConnectionFactory connectionFactory;
+        private IConnection connection;
+        private IModel channel;
+        private EventingBasicConsumer consumer;
 
         public MainForm()
         {
@@ -53,10 +59,12 @@ namespace neuopc
             btnAddNode.Enabled = connect;
             btnRemoveAll.Enabled = connect;
             btnRemoveItem.Enabled = connect;
+            UALabel.Text = connect ? "Connected" : "Disconnected";
 
             if (!connect)
             {
                 treeViewDaBrowse.Nodes.Clear();
+                UALabel.Text = String.Empty;
             }
         }
 
@@ -71,7 +79,7 @@ namespace neuopc
         {
             if (e.Node.Nodes.Count == 0) return;
 
-            var tag = (NodeInfo) e.Node.Tag;
+            var tag = (NodeInfo)e.Node.Tag;
             if (string.IsNullOrEmpty(tag?.Path))
             {
                 return;
@@ -102,9 +110,11 @@ namespace neuopc
                 }
             }
 
-            subNode = opcClient.GetLeaf(subNode);
-            if (null == subNode || 0 == subNode.Nodes?.Count)
+            var leafNode = opcClient.GetLeaf(subNode);
+            if (null == leafNode || 0 == leafNode.Nodes?.Count)
             {
+                subNode.IsLeaf = true;
+                e.Node.Nodes.Clear();
                 return;
             }
 
@@ -124,7 +134,7 @@ namespace neuopc
         {
             if (treeViewDaBrowse.SelectedNode == null || treeViewDaBrowse.SelectedNode.Nodes.Count > 0) return;
             var selectedNode = treeViewDaBrowse.SelectedNode;
-            var tag = (NodeInfo) selectedNode.Tag;
+            var tag = (NodeInfo)selectedNode.Tag;
             if (treeNode.FindNodeByPath(tag?.Path).IsLeaf)
             {
                 AddNode(selectedNode);
@@ -267,6 +277,7 @@ namespace neuopc
             var ts = new ThreadStart(TestGetDatas);
             var thread = new Thread(ts);
             thread.Start();
+            Consumer_Init();
         }
 
         private void DAServerComboBox_DropDown(object sender, EventArgs e)
@@ -591,7 +602,7 @@ namespace neuopc
             var _nodes = new List<NodeInfo>();
             foreach (var item in dataItems)
             {
-                _nodes.Add(new NodeInfo() { Name= item.Name, ID = item.ItemId, Path = item.Path });
+                _nodes.Add(new NodeInfo() { Name = item.Name, ID = item.ItemId, Path = item.Path });
             }
 
             config.Nodes = _nodes.ToArray();
@@ -677,13 +688,13 @@ namespace neuopc
                 MessageBox.Show("Please select a node first.");
                 return;
             }
-            AddNode(treeViewDaBrowse.SelectedNode);            
+            AddNode(treeViewDaBrowse.SelectedNode);
         }
 
         private void AddNode(TreeNode node)
         {
             var _node = node.Tag as NodeInfo;
-            if (null == _node || string.IsNullOrEmpty(_node?.Path))
+            if (null == _node || string.IsNullOrEmpty(_node?.ID))
             {
                 MessageBox.Show("Please select a node first.");
                 return;
@@ -694,19 +705,89 @@ namespace neuopc
                 MessageBox.Show("Item already exists.");
                 return;
             }
-            dataItems.Add(new ViewModel(_node.Name, _node.ID , _node.Path));
+            dataItems.Add(new ViewModel(_node.Name, _node.ID, _node.Path));
+
+            // Add to running service to update nodes
+            var isRunnig = SwitchButton.Text.Equals("Stop");
+            if (isRunnig)
+            {
+                var req = new DANodesReqMsg
+                {
+                    Type = MsgType.DAUpdateNodesReq,
+                    Nodes = new List<string>() { _node.ID }
+                };
+                var buff = Serializer.Serialize<DANodesReqMsg>(req);
+                subProcess.Request(in buff, out byte[] result);
+                if (null != result)
+                {
+                    var res = Serializer.Deserialize<DANodesResMsg>(result);
+                    Log.Information($"add node, code:{_node.Name}, msg:{res.Result}");
+                }
+            }
+        }
+
+        private void AddNode(NodeInfo _node)
+        {
+            if (null == _node || string.IsNullOrEmpty(_node?.ID))
+            {
+                MessageBox.Show("Please select a node first.");
+                return;
+            }
+
+            if (dataItems.Any(x => x.ItemId == _node.ID))
+            {
+                MessageBox.Show("Item already exists.");
+                return;
+            }
+            dataItems.Add(new ViewModel(_node.Name, _node.ID, _node.Path));
+
+            // Add to running service to update nodes
+            var isRunnig = SwitchButton.Text.Equals("Stop");
+            if (isRunnig)
+            {
+                var req = new DANodesReqMsg
+                {
+                    Type = MsgType.DAUpdateNodesReq,
+                    Nodes = new List<string>() { _node.ID }
+                };
+                var buff = Serializer.Serialize<DANodesReqMsg>(req);
+                subProcess.Request(in buff, out byte[] result);
+                if (null != result)
+                {
+                    var res = Serializer.Deserialize<DANodesResMsg>(result);
+                    Log.Information($"add node, code:{_node.Name}, msg:{res.Result}");
+                }
+            }
         }
 
         private void BtnRemoveItem_Click(object sender, EventArgs e)
         {
             if (dataGridView1.SelectedRows.Count < 0) return;
 
-            List<string> removes = new List<string>();
+            List<NodeInfo> removes = new List<NodeInfo>();
             foreach (DataGridViewRow row in dataGridView1.SelectedRows)
             {
                 if (!(row.DataBoundItem is ViewModel vm)) continue;
-                removes.Add(vm.Name);
+                removes.Add(row.Tag as NodeInfo);
                 dataItems.Remove(vm);
+            }
+
+            // Remove from running service to update nodes
+            var isRunnig = SwitchButton.Text.Equals("Stop");
+            if (isRunnig)
+            {
+                var req = new DANodesReqMsg
+                {
+                    Type = MsgType.DARemoveNodesReq,
+                    Nodes = removes.Select(x => x.ID).ToList()
+                };
+                var buff = Serializer.Serialize<DANodesReqMsg>(req);
+                subProcess.Request(in buff, out byte[] result);
+                if (null != result)
+                {
+                    var res = Serializer.Deserialize<DANodesResMsg>(result);
+                    Log.Information($"remove node, code:{res.Result}");
+                }
             }
         }
 
@@ -719,5 +800,43 @@ namespace neuopc
         {
 
         }
+
+
+        #region Queue Consumer
+        private void Consumer_Init()
+        {
+            connectionFactory = new ConnectionFactory { HostName = "localhost" };
+            connection = connectionFactory.CreateConnection();
+            channel = connection.CreateModel();
+            channel.QueueDeclare(queue: "sensor:single", durable: true, exclusive: false, autoDelete: false, arguments: null);
+            Log.Information(" [*] Waiting for messages.");
+
+            consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) =>
+            {
+                var body = ea.Body.ToArray();
+                var message = System.Text.Encoding.UTF8.GetString(body);
+                Log.Information($"[x] Received {message}");
+
+                var SensorData = JsonSerializer.Deserialize<QueueMsg>(message);
+                // Inkove UI thread
+                Action<NodeInfo> action = (data) =>
+                {
+                    AddNode(data);
+                };
+
+                try
+                {
+                    Invoke(action, new NodeInfo() { ID = SensorData.opc_tag, Name = SensorData.name });
+                }
+                catch (Exception exception)
+                {
+                    Log.Error(exception, $"add node error");
+                }
+            };
+
+            channel.BasicConsume(queue: "sensor:single", autoAck: true, consumer: consumer);
+        }
+        #endregion
     }
 }
