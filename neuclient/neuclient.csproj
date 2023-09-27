@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetMQ" Version="4.0.1.13" />
-    <PackageReference Include="Serilog" Version="3.0.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+    <PackageReference Include="OpcComRcw" Version="2.1.109" />
+    <PackageReference Include="Quick.OpcNetApi" Version="2.1.108" />
+    <PackageReference Include="Quick.OpcNetApi.Com" Version="2.1.108" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neuopc", "neuopc\neuopc.csproj", "{495EB8D0-766F-494F-B60B-2E46A9DFB7A4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0F272311-6E54-46E3-8437-3499784974F0} = {0F272311-6E54-46E3-8437-3499784974F0}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "neuservice", "neuservice\neuservice.csproj", "{E0EA2C0E-57CD-4AC4-A491-5C4E0EB9E405}"
 EndProject

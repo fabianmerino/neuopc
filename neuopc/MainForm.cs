@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Diagnostics;
 using Serilog;
+using neuclient;
 using neulib;
 using neuopc.Model;
 using System.ComponentModel;
@@ -22,6 +23,7 @@ namespace neuopc
         private readonly SubProcess subProcess;
         private bool running;
         private readonly OPCClientWrapper opcClient;
+        private DaClient _client;
         private readonly BindingList<ViewModel> dataItems = new BindingList<ViewModel>();
         private TagTreeNode treeNode;
         private ConnectionFactory connectionFactory;
@@ -78,9 +80,10 @@ namespace neuopc
         private void TreeViewDABrowse_AfterExpand(object sender, TreeViewEventArgs e)
         {
             if (e.Node.Nodes.Count == 0) return;
+            if (e.Node.Nodes[0].Tag.ToString() != "Loading...") return;
 
             var tag = (NodeInfo)e.Node.Tag;
-            if (string.IsNullOrEmpty(tag?.Path))
+            if (string.IsNullOrEmpty(tag?.ID))
             {
                 return;
             }
@@ -123,7 +126,7 @@ namespace neuopc
             var childs = tree.Where(x => subNode.Nodes.Any(a => a.FullPath == x.Key)).Select(x => x.Value).ToArray();
 
 
-            // // Add the children
+            // Add the children
             e.Node.ImageIndex = 4;
             e.Node.SelectedImageIndex = 5;
             e.Node.Nodes.AddRange(childs);
@@ -479,7 +482,7 @@ namespace neuopc
                 else
                 {
                     node = new TreeNode(item.Name) { Name = item.Name, Tag = tag, ImageIndex = 2, SelectedImageIndex = 3 };
-                    node.Nodes.Add(new TreeNode("Loading..."));
+                    node.Nodes.Add(new TreeNode("Loading...") { Tag = "Loading..." });
                 }
 
                 tree.Add(item.FullPath, node);
